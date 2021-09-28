@@ -1,0 +1,24 @@
+﻿<Window x:Class="budget.SelectPotDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:budget"
+        mc:Ignorable="d"
+        Title="Select pot" SizeToContent="WidthAndHeight">
+    <Grid Margin="3">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Label Content="Pot" Grid.Column="0" Margin="0,0,3,0"/>
+        <ComboBox Grid.Column="1" Name="mComboBox" DisplayMemberPath="Title"/>
+        <Button Content="Select" Grid.Row="1" Grid.ColumnSpan="2" IsDefault="True" Margin="0,3,0,3" Name="mSelectButton"/>
+        <Button Content="Cancel" Grid.Row="2" Grid.ColumnSpan="2" IsCancel="True"/>
+    </Grid>
+</Window>

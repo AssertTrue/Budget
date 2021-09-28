@@ -1,0 +1,278 @@
+﻿<Window x:Class="budget.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:budget"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+        <local:PenniesTypeConverter x:Key="PenniesTypeConverter" />
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter"/>
+        <local:PenniesValidationRule x:Key="PenniesValidationRule"/>
+        <Style TargetType="ToolBar">
+            <Setter Property="ToolBarTray.IsLocked" Value="True"/>
+            <Setter Property="Margin" Value="1.5"/>
+        </Style>
+    </Window.Resources>
+    <Window.InputBindings>
+        <KeyBinding Command="{Binding FillOriginUp}" Gesture="CTRL+G"/>
+        <KeyBinding Command="{Binding FillDestinationUp}" Gesture="CTRL+Y"/>
+        <KeyBinding Command="{Binding FillUp}" Gesture="CTRL+H"/>
+        <KeyBinding Command="{Binding FillAuto}" Gesture="CTRL+W"/>
+    </Window.InputBindings>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ToolBar Grid.Row="0" Margin="3">
+            <Button Content="New" Command="{Binding New}"/>
+            <Button Content="Open" Command="{Binding Open}"/>
+            <Button Content="Import..." Command="{Binding Import}"/>
+            <Button Content="Save" Command="{Binding Save}"/>
+            <Button Content="Close" Command="{Binding Close}"/>
+        </ToolBar>
+        <TabControl Grid.Row="1" Visibility="{Binding FileOpen, Converter={StaticResource VisibleIfTrueConverter}}" Padding="1.5" Margin="1.5">
+            <TabItem Header="Transactions">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="10*"/>
+                        <ColumnDefinition Width="3*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <ListView Grid.Row="1" Margin="1.5" Grid.Column="0" Name="TransactionPotsListView" Grid.ColumnSpan="2" ItemsSource="{Binding VisiblePots}">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Right" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Title}"/>
+                                <GridViewColumn Header="Balance" DisplayMemberBinding="{Binding BalanceInPennies, Converter={StaticResource PenniesTypeConverter}, Mode=OneWay}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <ToolBar Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                        <Button Content="Zero..." Command="{Binding ZeroPotInTransactions}" CommandParameter="{Binding ElementName=TransactionPotsListView, Path=SelectedItems}"/>
+                    </ToolBar>
+                    <ToolBar Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="1">
+                        <Button Content="Add" Command="{Binding AddTransaction}"/>
+                        <Button Content="Delete" Command="{Binding DeleteTransaction}"/>
+                        <Separator Width="2"/>
+                        <Label Content="Page:"/>
+                        <TextBox Text="{Binding CurrentPageIndex}" MinWidth="20"/>
+                        <Button Content="Next" Command="{Binding NextPage}"/>
+                        <Button Content="Previous" Command="{Binding PreviousPage}"/>
+                        <Button Content="First" Command="{Binding FirstPage}"/>
+                        <Button Content="Last" Command="{Binding LastPage}"/>
+                    </ToolBar>
+                    <DataGrid Margin="1.5" Grid.Row="1" Grid.Column="2" Grid.RowSpan="3" ItemsSource="{Binding VisibleTransactions}" AutoGenerateColumns="False" SelectedItem="{Binding SelectedTransaction}" CanUserAddRows="False" CanUserDeleteRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date" Binding="{Binding Path=Date}"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Path=Description}"/>
+                            <DataGridTextColumn Header="Amount">
+                                <DataGridTextColumn.Binding>
+                                    <Binding Path="ValueInPennies" UpdateSourceTrigger="LostFocus" Converter="{StaticResource PenniesTypeConverter}">
+                                        <Binding.ValidationRules>
+                                            <local:PenniesValidationRule/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </DataGridTextColumn.Binding>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Balance" Binding="{Binding Path=BalanceInPennies, Mode=OneWay, Converter={StaticResource PenniesTypeConverter}}">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridComboBoxColumn 
+                                Header="From" 
+                                DisplayMemberPath="Title" 
+                                SelectedValuePath="Id" 
+                                SelectedValueBinding="{Binding OriginId, UpdateSourceTrigger=LostFocus}">
+                                <DataGridComboBoxColumn.ElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.ElementStyle>
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                            <DataGridComboBoxColumn 
+                                Header="To" 
+                                DisplayMemberPath="Title" 
+                                SelectedValuePath="Id" 
+                                SelectedValueBinding="{Binding DestinationId, UpdateSourceTrigger=LostFocus}">
+                                <DataGridComboBoxColumn.ElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.ElementStyle>
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                            <DataGridTextColumn Header="Comment" Binding="{Binding Path=Comment, UpdateSourceTrigger=LostFocus}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Grid Grid.Column="3" Grid.Row="0" Grid.RowSpan="2" Margin="1.5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Label Grid.Row="0" Grid.Column="0">Field</Label>
+                        <Label Grid.Row="0" Grid.Column="1">Filter</Label>
+                        <Label Grid.Row="1" Grid.Column="0">Date</Label>
+                        <Label Grid.Row="2" Grid.Column="0">Description</Label>
+                        <Label Grid.Row="3" Grid.Column="0">Amount</Label>
+                        <Label Grid.Row="4" Grid.Column="0">Balance</Label>
+                        <Label Grid.Row="5" Grid.Column="0">From</Label>
+                        <Label Grid.Row="6" Grid.Column="0">To</Label>
+                        <Label Grid.Row="7" Grid.Column="0">Comment</Label>
+                        <TextBox Grid.Row="1" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DateFilter}"/>
+                        <TextBox Grid.Row="2" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DescriptionFilter}"/>
+                        <TextBox Grid.Row="3" Margin="0,3,0,0" Grid.Column="1" Text="{Binding AmountFilter}"/>
+                        <TextBox Grid.Row="4" Margin="0,3,0,0" Grid.Column="1" Text="{Binding BalanceFilter}"/>
+                        <TextBox Grid.Row="5" Margin="0,3,0,0" Grid.Column="1" Text="{Binding FromFilter}"/>
+                        <TextBox Grid.Row="6" Margin="0,3,0,0" Grid.Column="1" Text="{Binding ToFilter}"/>
+                        <TextBox Grid.Row="7" Margin="0,3,0,0" Grid.Column="1" Text="{Binding CommentFilter}"/>
+                    </Grid>
+                    <Label Content="Balance" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalContentAlignment="Center"/>
+                    <TextBox Text="{Binding PotTotalBalanceInPennies, Mode=OneWay, Converter={StaticResource PenniesTypeConverter}}" Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="1.5"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Budgets">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0" HorizontalAlignment="Right" Width="147">
+                        <Button Content="Add" Command="{Binding AddBudget}"/>
+                        <Button Content="Delete" Command="{Binding DeleteBudget}"/>
+                        <Button Content="Transfer..." Command="{Binding BudgetTransfer}"/>
+                    </ToolBar>
+                    <DataGrid Margin="1.5"  Grid.Row="1" Grid.ColumnSpan="3" Grid.Column="0" ItemsSource="{Binding Budgets}" AutoGenerateColumns="False" SelectedItem="{Binding SelectedBudget}" CanUserAddRows="False" CanUserDeleteRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Path=Title}"/>
+                            <DataGridTextColumn Header="Amount">
+                                <DataGridTextColumn.Binding>
+                                    <Binding Path="AmountInPennies" Converter="{StaticResource PenniesTypeConverter}">
+                                        <Binding.ValidationRules>
+                                            <local:PenniesValidationRule/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </DataGridTextColumn.Binding>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Annual" Binding="{Binding Path=AnnualAmountInPennies, Converter={StaticResource PenniesTypeConverter}, Mode=OneWay}">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <!--<DataGridTextColumn Header="Pot" Binding="{Binding Path=PotTitle, Mode=OneWay}"/>-->
+                            <DataGridComboBoxColumn 
+                                Header="Pot" 
+                                DisplayMemberPath="Title" 
+                                SelectedValuePath="Id" 
+                                SelectedValueBinding="{Binding PotId}">
+                                <DataGridComboBoxColumn.ElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.ElementStyle>
+                                <DataGridComboBoxColumn.EditingElementStyle>
+                                    <Style TargetType="{x:Type ComboBox}">
+                                        <Setter Property="ItemsSource" Value="{Binding Path=DataContext.AvailablePots, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
+                                    </Style>
+                                </DataGridComboBoxColumn.EditingElementStyle>
+                            </DataGridComboBoxColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Label Content="Total" Grid.Row="2" Grid.Column="0" Margin="1.5"/>
+                    <TextBox Text="{Binding BudgetTotalBalanceInPennies, Mode=OneWay, Converter={StaticResource PenniesTypeConverter}}" 
+                             Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="1.5,3,1.5,1.5" MinWidth="100"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Pots">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <ToolBar Grid.Row="0">
+                        <Button Content="Add" Command="{Binding AddPot}"/>
+                        <Button Content="Delete" Command="{Binding DeletePot}"/>
+                        <Button Content="Up" Command="{Binding PotUp}"/>
+                        <Button Content="Down" Command="{Binding PotDown}"/>
+                        <Button Content="Up 10" Command="{Binding PotUpTen}"/>
+                        <Button Content="Down 10" Command="{Binding PotDownTen}"/>
+                        <Button Content="Zero with..." Command="{Binding ZeroPot}"/>
+                        <Button Content="Reassign..." Command="{Binding ReassignPot}"/>
+                    </ToolBar>
+                    <DataGrid Margin="1.5" Grid.Row="1" ItemsSource="{Binding Pots}" AutoGenerateColumns="False" SelectedItem="{Binding SelectedPot}" CanUserAddRows="False" CanUserDeleteRows="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Name" Binding="{Binding Path=Title}"/>
+                            <DataGridTextColumn Header="Balance" Binding="{Binding Path=BalanceInPennies, Mode=OneWay, Converter={StaticResource PenniesTypeConverter}}">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Right" />
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Sequence" Binding="{Binding Path=Sequence}"/>
+                            <DataGridCheckBoxColumn Header="Visible" Binding="{Binding IsVisible}"/>
+                            <DataGridCheckBoxColumn Header="Pickable" Binding="{Binding IsPickable}"/>
+                            <DataGridTextColumn Header="Origin #" Binding="{Binding OriginCount}"/>
+                            <DataGridTextColumn Header="Destination #" Binding="{Binding DestinationCount}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
