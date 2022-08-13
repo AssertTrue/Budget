@@ -87,6 +87,7 @@
     </ApplicationDefinition>
     <Compile Include="Accounts.cs" />
     <Compile Include="Budget.cs" />
+    <Compile Include="DebugTimer.cs" />
     <Compile Include="ImportDialog.xaml.cs">
       <DependentUpon>ImportDialog.xaml</DependentUpon>
     </Compile>

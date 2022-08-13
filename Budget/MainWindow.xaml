@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:budget"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Budgets 0.11" Height="450" Width="800">
     <Window.Resources>
         <local:PenniesTypeConverter x:Key="PenniesTypeConverter" />
         <BooleanToVisibilityConverter x:Key="VisibleIfTrueConverter"/>

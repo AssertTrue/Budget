@@ -24,6 +24,7 @@ namespace budget
             Transactions.CollectionChanged += (s, a) =>
             {
                 refreshVisibleTransactions();
+                refreshVisiblePots();
                 activateSave();
             };
 
@@ -81,7 +82,7 @@ namespace budget
         private void loadTransactions(IEnumerable<Transaction> aTransactions)
         {
             Util.unregister(Transactions, onTransactionChanged);
-            Transactions.Reset(aTransactions);
+            Transactions.Reset(aTransactions.OrderBy(x => x.Id));
             Util.register(Transactions, onTransactionChanged);
         }
 
@@ -302,7 +303,7 @@ namespace budget
             if (result.HasValue && result.Value && selectPotDialog.SelectedPotId.HasValue)
             {
                 var pot = Pots.First(x => x.Id == selectPotDialog.SelectedPotId.Value);
-                foreach (var selectedPot in aSelectedPots)
+                foreach (var selectedPot in aSelectedPots.ToList())
                 {
                     var transaction = addTransaction();
                     transaction.ValueInPennies = selectedPot.BalanceInPennies;
@@ -353,7 +354,7 @@ namespace budget
         #endregion
 
         #region Resequence pots
-        private void switchPots(Pot aPot, int aChange)
+        private void changePotSequence(Pot aPot, int aChange)
         {
             var allPots = Pots.OrderBy(x => x.Sequence).ToList();
             var index = allPots.IndexOf(aPot);
@@ -375,7 +376,8 @@ namespace budget
 
             if (FileOpen && canMovePotUp())
             {
-                switchPots(SelectedPot, -1);
+                changePotSequence(SelectedPot, -1);
+                refreshVisiblePots();
             }
         }
 
@@ -390,10 +392,12 @@ namespace budget
 
                 foreach (var i in Enumerable.Range(0, 10))
                 {
-                    switchPots(SelectedPot, -1);
+                    changePotSequence(SelectedPot, -1);
                 }
 
                 mRefreshMutex = false;
+
+                refreshVisiblePots();
             }
         }
 
@@ -409,7 +413,8 @@ namespace budget
 
             if (FileOpen && canMovePotDown())
             {
-                switchPots(SelectedPot, +1);
+                changePotSequence(SelectedPot, +1);
+                refreshVisiblePots();
             }
         }
 
@@ -424,10 +429,12 @@ namespace budget
 
                 foreach (var i in Enumerable.Range(0, 10))
                 {
-                    switchPots(SelectedPot, +1);
+                    changePotSequence(SelectedPot, +1);
                 }
 
                 mRefreshMutex = false;
+
+                refreshVisiblePots();
             }
         }
         #endregion
@@ -656,13 +663,14 @@ namespace budget
         {
             if (FileOpen && SelectedTransaction != null)
             {
-                var selectedIndex = Transactions.IndexOf(SelectedTransaction);
+                var searchableTransactions = Transactions.OrderBy(x => x.Id).ToList();
+                var selectedIndex = searchableTransactions.IndexOf(SelectedTransaction);
                 int? bestMatchIndex = null;
                 int bestMatchCount = 0;
 
-                for (int index = selectedIndex + 1; index < Transactions.Count; ++index)
+                for (int index = selectedIndex -1; index >= 0; --index)
                 {
-                    var possibleTransaction = Transactions[index];
+                    var possibleTransaction = searchableTransactions[index];
                     if (!possibleTransaction.OriginId.HasValue || !possibleTransaction.DestinationId.HasValue)
                     {
                         continue;
@@ -690,7 +698,7 @@ namespace budget
 
                 if (bestMatchIndex.HasValue)
                 {
-                    var possibleTransaction = Transactions[bestMatchIndex.Value];
+                    var possibleTransaction = searchableTransactions[bestMatchIndex.Value];
                     SelectedTransaction.OriginId = possibleTransaction.OriginId;
                     SelectedTransaction.DestinationId = possibleTransaction.DestinationId;
                 }
@@ -873,61 +881,81 @@ namespace budget
 
         private void refreshVisibleTransactions()
         {
-            var transactions = FilteredTransactions;
-            int maxPages = (int)Math.Ceiling(transactions.Count / (double)TransactionsPerPage);
-            int pageIndex = Math.Max(0, Math.Min(mCurrentPageIndex, maxPages - 1));
-            int startIndex = pageIndex * TransactionsPerPage;
-            int count = Math.Min(transactions.Count - startIndex, TransactionsPerPage);
-            transactions = transactions.GetRange(startIndex, count);
-            VisibleTransactions.Reset(transactions);
+            using (var debug = new DebugTimer("Refresh visible transactions"))
+            {
+                var transactions = FilteredTransactions;
+                int maxPages = (int)Math.Ceiling(transactions.Count / (double)TransactionsPerPage);
+                int pageIndex = Math.Max(0, Math.Min(mCurrentPageIndex, maxPages - 1));
+                int startIndex = pageIndex * TransactionsPerPage;
+                int count = Math.Min(transactions.Count - startIndex, TransactionsPerPage);
+                transactions = transactions.GetRange(startIndex, count);
+                VisibleTransactions.Reset(transactions);
+            }
         }
         void refreshBudgetTotalBalanceInPennies()
         {
-            BudgetTotalBalanceInPennies = Budgets.Sum(x => x.AmountInPennies);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BudgetTotalBalanceInPennies)));
+            using (var debug = new DebugTimer("Refresh budget total balance in pennies"))
+            {
+                BudgetTotalBalanceInPennies = Budgets.Sum(x => x.AmountInPennies);
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(BudgetTotalBalanceInPennies)));
+            }
         }
 
         private void refreshPotComboItems()
         {
-            var pickable = Pots.Where(x => x.IsPickable).OrderBy(x => x.Title).Select(y => new PotComboItem(y));
-            AvailablePots.Reset(pickable);
-            AvailablePots.Insert(0, new PotComboItem(null));
-            refreshTransactionPots();
+            {
+                var pickable = Pots.Where(x => x.IsPickable).OrderBy(x => x.Title).Select(y => new PotComboItem(y));
+                AvailablePots.Reset(pickable);
+                AvailablePots.Insert(0, new PotComboItem(null));
+                refreshTransactionPots();
+            }
         }
 
         private void refreshTransactionPots()
         {
-            mRefreshMutex = true;
-            foreach (var transaction in Transactions)
+            using (var debug = new DebugTimer("Refresh transaction pots"))
             {
-                transaction.refreshPotProperties();
+                mRefreshMutex = true;
+                foreach (var transaction in Transactions)
+                {
+                    transaction.refreshPotProperties();
+                }
+                mRefreshMutex = false;
             }
-            mRefreshMutex = false;
         }
 
         private void refreshPotTransactionProperties()
         {
-            foreach (var pot in Pots)
+            using (var debug = new DebugTimer("Refresh pot transaction properties"))
             {
-                pot.refreshDependentProperties();
+                foreach (var pot in Pots)
+                {
+                    pot.refreshDependentProperties();
+                }
             }
             refreshPotTotalBalanceInPennies();
         }
 
         private void refreshPotTotalBalanceInPennies()
         {
-            PotTotalBalanceInPennies = VisiblePots.Sum(x => x.BalanceInPennies);
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PotTotalBalanceInPennies)));
+            using (var debug = new DebugTimer("Refresh pot total balance in pennies"))
+            {
+                PotTotalBalanceInPennies = VisiblePots.Sum(x => x.BalanceInPennies);
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PotTotalBalanceInPennies)));
+            }
         }
 
         private void refreshVisiblePots()
         {
-            mRefreshMutex = true;
-            var pots = Pots.Where(x => x.IsVisible).OrderBy(x => x.Sequence);
-            VisiblePots.Clear();
-            VisiblePots.AddRange(pots);
-            refreshPotTotalBalanceInPennies();
-            mRefreshMutex = false;
+            using (var debug = new DebugTimer("Refresh visible pots"))
+            {
+                mRefreshMutex = true;
+                var pots = Pots.Where(x => x.IsVisible).OrderBy(x => x.Sequence);
+                VisiblePots.Clear();
+                VisiblePots.AddRange(pots);
+                refreshPotTotalBalanceInPennies();
+                mRefreshMutex = false;
+            }
         }
         #endregion
 
