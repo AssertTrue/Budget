@@ -27,6 +27,11 @@ namespace budget
             mSelectButton.Click += (s, a) => DialogResult = true;
         }
 
+        public SelectPotDialog(Window aOwner) : this()
+        {
+            this.Owner = aOwner;
+        }
+
         public bool? ShowDialog(string aTitle, ObservableCollection<PotComboItem> aPots, PotComboItem aSelectedItem = null)
         {
             this.Title = aTitle;

@@ -14,6 +14,9 @@
             <Setter Property="ToolBarTray.IsLocked" Value="True"/>
             <Setter Property="Margin" Value="1.5"/>
         </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="FontSize" Value="10"/>
+        </Style>
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding Command="{Binding FillOriginUp}" Gesture="CTRL+G"/>
@@ -38,9 +41,11 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
-                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="5"/>
                         <ColumnDefinition Width="10*"/>
-                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -55,15 +60,15 @@
                         </ListView.ItemContainerStyle>
                         <ListView.View>
                             <GridView>
-                                <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Title}"/>
-                                <GridViewColumn Header="Balance" DisplayMemberBinding="{Binding BalanceInPennies, Converter={StaticResource PenniesTypeConverter}, Mode=OneWay}"/>
+                                <GridViewColumn Width="100" Header="Pot" DisplayMemberBinding="{Binding Title}"/>
+                                <GridViewColumn Width="70" Header="Balance" DisplayMemberBinding="{Binding BalanceInPennies, Converter={StaticResource PenniesTypeConverter}, Mode=OneWay}"/>
                             </GridView>
                         </ListView.View>
                     </ListView>
                     <ToolBar Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
                         <Button Content="Zero..." Command="{Binding ZeroPotInTransactions}" CommandParameter="{Binding ElementName=TransactionPotsListView, Path=SelectedItems}"/>
                     </ToolBar>
-                    <ToolBar Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="1">
+                    <ToolBar Grid.Row="0" Grid.Column="3" Grid.ColumnSpan="1">
                         <Button Content="Add" Command="{Binding AddTransaction}"/>
                         <Button Content="Delete" Command="{Binding DeleteTransaction}"/>
                         <Separator Width="2"/>
@@ -74,8 +79,10 @@
                         <Button Content="First" Command="{Binding FirstPage}"/>
                         <Button Content="Last" Command="{Binding LastPage}"/>
                     </ToolBar>
-                    <DataGrid Margin="1.5" Grid.Row="1" Grid.Column="2" Grid.RowSpan="3" ItemsSource="{Binding VisibleTransactions}" AutoGenerateColumns="False" SelectedItem="{Binding SelectedTransaction}" CanUserAddRows="False" CanUserDeleteRows="False">
+                    <GridSplitter Grid.Column="2" Grid.Row="0" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="1" Background="Black"/>
+                    <DataGrid Margin="1.5" Grid.Row="1" Grid.Column="3" Grid.RowSpan="3" ItemsSource="{Binding VisibleTransactions}" AutoGenerateColumns="False" SelectedItem="{Binding SelectedTransaction}" CanUserAddRows="False" CanUserDeleteRows="False">
                         <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Path=Id}"/>
                             <DataGridTextColumn Header="Date" Binding="{Binding Path=Date}"/>
                             <DataGridTextColumn Header="Description" Binding="{Binding Path=Description}"/>
                             <DataGridTextColumn Header="Amount">
@@ -134,38 +141,41 @@
                             <DataGridTextColumn Header="Comment" Binding="{Binding Path=Comment, UpdateSourceTrigger=LostFocus}"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Grid Grid.Column="3" Grid.Row="0" Grid.RowSpan="2" Margin="1.5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Label Grid.Row="0" Grid.Column="0">Field</Label>
-                        <Label Grid.Row="0" Grid.Column="1">Filter</Label>
-                        <Label Grid.Row="1" Grid.Column="0">Date</Label>
-                        <Label Grid.Row="2" Grid.Column="0">Description</Label>
-                        <Label Grid.Row="3" Grid.Column="0">Amount</Label>
-                        <Label Grid.Row="4" Grid.Column="0">Balance</Label>
-                        <Label Grid.Row="5" Grid.Column="0">From</Label>
-                        <Label Grid.Row="6" Grid.Column="0">To</Label>
-                        <Label Grid.Row="7" Grid.Column="0">Comment</Label>
-                        <TextBox Grid.Row="1" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DateFilter}"/>
-                        <TextBox Grid.Row="2" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DescriptionFilter}"/>
-                        <TextBox Grid.Row="3" Margin="0,3,0,0" Grid.Column="1" Text="{Binding AmountFilter}"/>
-                        <TextBox Grid.Row="4" Margin="0,3,0,0" Grid.Column="1" Text="{Binding BalanceFilter}"/>
-                        <TextBox Grid.Row="5" Margin="0,3,0,0" Grid.Column="1" Text="{Binding FromFilter}"/>
-                        <TextBox Grid.Row="6" Margin="0,3,0,0" Grid.Column="1" Text="{Binding ToFilter}"/>
-                        <TextBox Grid.Row="7" Margin="0,3,0,0" Grid.Column="1" Text="{Binding CommentFilter}"/>
-                    </Grid>
+                    <GridSplitter Grid.Column="4" Grid.Row="0" Grid.RowSpan="3" HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="1" Background="Black"/>
+                    <Expander Grid.Column="5" Grid.Row="0" Grid.RowSpan="2" Margin="1.5">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Label Grid.Row="0" Grid.Column="0">Field</Label>
+                            <Label Grid.Row="0" Grid.Column="1">Filter</Label>
+                            <Label Grid.Row="1" Grid.Column="0">Date</Label>
+                            <Label Grid.Row="2" Grid.Column="0">Description</Label>
+                            <Label Grid.Row="3" Grid.Column="0">Amount</Label>
+                            <Label Grid.Row="4" Grid.Column="0">Balance</Label>
+                            <Label Grid.Row="5" Grid.Column="0">From</Label>
+                            <Label Grid.Row="6" Grid.Column="0">To</Label>
+                            <Label Grid.Row="7" Grid.Column="0">Comment</Label>
+                            <TextBox Grid.Row="1" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DateFilter}"/>
+                            <TextBox Grid.Row="2" Margin="0,3,0,0" Grid.Column="1" Text="{Binding DescriptionFilter}"/>
+                            <TextBox Grid.Row="3" Margin="0,3,0,0" Grid.Column="1" Text="{Binding AmountFilter}"/>
+                            <TextBox Grid.Row="4" Margin="0,3,0,0" Grid.Column="1" Text="{Binding BalanceFilter}"/>
+                            <TextBox Grid.Row="5" Margin="0,3,0,0" Grid.Column="1" Text="{Binding FromFilter}"/>
+                            <TextBox Grid.Row="6" Margin="0,3,0,0" Grid.Column="1" Text="{Binding ToFilter}"/>
+                            <TextBox Grid.Row="7" Margin="0,3,0,0" Grid.Column="1" Text="{Binding CommentFilter}"/>
+                        </Grid>
+                    </Expander>
                     <Label Content="Balance" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" HorizontalContentAlignment="Center"/>
                     <TextBox Text="{Binding PotTotalBalanceInPennies, Mode=OneWay, Converter={StaticResource PenniesTypeConverter}}" Grid.Row="2" Grid.Column="1" IsReadOnly="True" Margin="1.5"/>
                 </Grid>
@@ -274,5 +284,15 @@
                 </Grid>
             </TabItem>
         </TabControl>
+        <Grid Visibility="{Binding NoFileOpen, Converter={StaticResource VisibleIfTrueConverter}}" Grid.Row="1" Margin="1.5" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Label Grid.Row="0" Content="Recent files:"/>
+            <ListBox Grid.Row="1" Padding="5"
+                     ItemsSource="{Binding RecentFiles}" SelectedIndex="{Binding SelectedRecentFileIndex}"/>
+        </Grid>
+
     </Grid>
 </Window>

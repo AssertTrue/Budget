@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:budget"
         mc:Ignorable="d"
+        WindowStartupLocation="CenterOwner"
         Title="Select pot" SizeToContent="WidthAndHeight">
     <Grid Margin="3">
         <Grid.RowDefinitions>

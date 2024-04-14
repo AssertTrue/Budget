@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
+using Budget.Properties;
 
 namespace budget
 {
@@ -13,6 +14,11 @@ namespace budget
         #region Constructor
         public MainViewModel()
         {
+            if (Settings.Default.RecentFiles == null)
+            {
+                Settings.Default.RecentFiles = new System.Collections.Specialized.StringCollection();
+            }
+
             FileOpen = false;
             Transactions = new ObservableCollectionFast<Transaction>();
             VisiblePots = new ObservableCollectionFast<Pot>();
@@ -49,6 +55,9 @@ namespace budget
 
         #region Properties and commands
         public bool FileOpen { get; private set; }
+        public bool NoFileOpen { get { return !FileOpen; } }
+        public int SelectedRecentFileIndex { get { return mSelectedRecentFileIndex; } set { mSelectedRecentFileIndex = value; openFile(Settings.Default.RecentFiles[value]); } }
+        public System.Collections.Specialized.StringCollection RecentFiles { get { return Settings.Default.RecentFiles; } }
         public RelayCommand New => new RelayCommand((o) => { onNew(); }, (o) => { return !FileOpen; });
         public RelayCommand Open => new RelayCommand((o) => { onOpen(); }, (o) => { return !FileOpen; });
         public RelayCommand Import => new RelayCommand((o) => { onImport(); }, (o) => { return FileOpen; });
@@ -134,7 +143,19 @@ namespace budget
 
                 FileOpen = true;
 
+                recordRecentFile(aFilePath);
+
                 fireAllPropertiesChanged();
+            }
+        }
+
+        private void recordRecentFile(string aFilePath)
+        {
+            if (!Settings.Default.RecentFiles.Contains(aFilePath))
+            {
+                Settings.Default.RecentFiles.Add(aFilePath);
+                Settings.Default.Save();
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RecentFiles)));
             }
         }
         #endregion
@@ -297,7 +318,7 @@ namespace budget
 
         private void zeroPots(IEnumerable<Pot> aSelectedPots)
         {
-            var selectPotDialog = new SelectPotDialog();
+            var selectPotDialog = new SelectPotDialog(Application.Current.MainWindow);
             var result = selectPotDialog.ShowDialog("Zero with...", AvailablePots);
 
             if (result.HasValue && result.Value && selectPotDialog.SelectedPotId.HasValue)
@@ -330,7 +351,7 @@ namespace budget
 
         private void onReassignPot()
         {
-            var selectPotDialog = new SelectPotDialog();
+            var selectPotDialog = new SelectPotDialog(Application.Current.MainWindow);
             var result = selectPotDialog.ShowDialog("Reassign to...", AvailablePots);
 
             if (result.HasValue && result.Value && selectPotDialog.SelectedPotId.HasValue)
@@ -671,7 +692,14 @@ namespace budget
                 for (int index = selectedIndex -1; index >= 0; --index)
                 {
                     var possibleTransaction = searchableTransactions[index];
+                    // Ignore transactions that don't have origin or destination set
                     if (!possibleTransaction.OriginId.HasValue || !possibleTransaction.DestinationId.HasValue)
+                    {
+                        continue;
+                    }
+                    // Ignore transactions if the pots aren't pickable
+                    if (!Pots.First(x => x.Id == possibleTransaction.OriginId.Value).IsPickable
+                        || !Pots.First(x => x.Id == possibleTransaction.DestinationId.Value).IsPickable)
                     {
                         continue;
                     }
@@ -811,7 +839,7 @@ namespace budget
 
             if (FileOpen)
             {
-                var selectPotDialog = new SelectPotDialog();
+                var selectPotDialog = new SelectPotDialog(Application.Current.MainWindow);
                 var result = selectPotDialog.ShowDialog("Transfer from...", AvailablePots);
 
                 if (result.HasValue && result.Value && selectPotDialog.SelectedPotId.HasValue)
@@ -979,6 +1007,7 @@ namespace budget
         private string mToFilter;
         private string mCommentFilter;
         private string mFilePath;
+        private int mSelectedRecentFileIndex = -1;
         #endregion
     }
 }
